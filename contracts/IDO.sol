@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract IDO is ERC721Enumerable, Ownable {
     uint256 private _currentTokenId;
     uint256 public idoDuration;
-    uint256 private _fee;
-    uint256 private _feeIdo;
+    uint256 private _fee = 3e18;
+    uint256 private _feeIdo = 2e18;
     mapping(address => bool) private _whiteList;
 
     event SetIdoTime(uint256 indexed value);
@@ -16,27 +16,19 @@ contract IDO is ERC721Enumerable, Ownable {
 
     constructor(string memory name, string memory symbol)
         ERC721(name, symbol)
-    {
-        _fee = 3e18;
-        _feeIdo = 2e18;
-    }
+    {}
 
     function mintToken() external payable {
-        if (block.timestamp < idoDuration) {
-            require(_whiteList[msg.sender], "address not in whiteList");
-            require(msg.value >= _feeIdo, "not enough value");
+        uint256 fee = _getFee();
+        if (fee == _feeIdo && !_whiteList[msg.sender]) revert("address not in whiteList");
+        require(msg.value >= fee, "not enough value");
+        _safeMint(msg.sender, ++_currentTokenId);
+        payable(owner()).transfer(msg.value);
+        emit Minted(msg.sender, _currentTokenId, block.timestamp);
+    }
 
-            _safeMint(msg.sender, ++_currentTokenId);
-            payable(owner()).transfer(msg.value);
-            emit Minted(msg.sender, _currentTokenId, block.timestamp);
-        }
-        else {
-            require(msg.value >= _fee, "not enough value");
-
-            _safeMint(msg.sender, ++_currentTokenId);
-            payable(owner()).transfer(msg.value);
-            emit Minted(msg.sender, _currentTokenId, block.timestamp);
-        }
+    function _getFee() private returns (uint256) {
+        return block.timestamp < idoDuration? _feeIdo : _fee;
     }
 
     function setIdoTime(uint256 value) external onlyOwner {

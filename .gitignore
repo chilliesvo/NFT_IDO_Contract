@@ -1,11 +1,6 @@
 # compiled output
 /dist
 /node_modules
-/common/protobuf/node_modules
-/sc/node_modules
-/ganache_data
-/build
-/site
 /artifacts
 /cache
 
